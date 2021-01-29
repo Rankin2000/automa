@@ -1,7 +1,7 @@
 import argparse
 import os
 import pefile
-
+import floss, vivisect
 
 #Flags
 parser = argparse.ArgumentParser()
@@ -11,14 +11,18 @@ args = parser.parse_args()
 
 
 def strings():
-    sampleStrings = os.system("strings " + args.sample)
-    print(sampleStrings)
+#    sampleStrings = os.system("strings " + args.sample)
+#    print(sampleStrings)
 
+    try:
+        vw = vivisect.VivWorkspace()
+        vw.loadFromFile
+        decodedStrings = floss.main.decode_strings(
 def saveResult():
     
     if args.output:
         output_file = args.output
-
+    
     else:
         output_file = open("output.html", "w") 
     
@@ -28,7 +32,7 @@ def saveResult():
 
 def peFile():
     pe = pefile.PE(args.sample)
-#    help(pefile.PE)    
+    help(pefile.PE)    
     if pe.is_exe():
         print("File is exe")
     elif pe.is_dll():
@@ -40,4 +44,4 @@ def peFile():
 strings()
 peFile()
 saveResult()
-
+ 
