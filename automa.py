@@ -28,12 +28,13 @@ class Sample:
         self.malware = False
 
 def strings(sample):
-    os.system("python2.7 floss.py " + sample.name + " > strings.txt")
+    os.system("floss -q --output-json floss.json " + sample.name)
 
-    f = open("strings.txt", "r")
-    sample.strings = f.read().splitlines()
-    f.close()
-       
+#    f = open("strings.txt", "r")
+#    sample.strings = f.read().splitlines()
+#    f.close()
+    with open("floss.json") as f:
+        sample.floss = json.load(f)
     
 def peFile(sample):
     pe = pefile.PE(sample.name)
@@ -121,6 +122,21 @@ def format(sample):
         pass
 
     try:
+        if sample.floss:
+            output += "<h2>FLOSS Results</h2>"
+            for key in sample.floss["strings"]:
+                output += "<h4>" + key.replace("_", " ") + "</h3>"
+                if sample.floss["strings"][key]:
+                    output += "<ul>"
+                    for string in sample.floss["strings"][key]:
+                        output += "<li>" + string + "</li>"
+                    output += "</ul>"
+                else:
+                    output += "FLOSS found 0 " + key.replace("_", " ") 
+
+    except AttributeError:
+        pass
+    try:
         if sample.capa:
             output += "<h2>FireEye's Capa</h2>"
         if sample.capa["rules"]:
@@ -207,12 +223,14 @@ def analysis(sample):
         f = open("wordlist.txt", "r")
         wordlist = f.read().splitlines()
         f.close()
-        suspicious = []
+        suspicious = set()
 
-        for string in sample.strings:
-            if string != "":
-                if string.lower() in wordlist:
-                    suspicious.append(string)
+        for key in sample.floss["strings"]:
+            for string in sample.floss["strings"][key]:
+                for word in wordlist:
+                    if word in string.lower():
+                        suspicious.add(string)
+                        print(string)
         if suspicious:
             sample.malware = True
             sample.reasons["FLOSS"] = suspicious
