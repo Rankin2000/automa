@@ -28,7 +28,7 @@ class Sample:
         self.malware = False
 
 def strings(sample):
-    os.system("floss -q --output-json floss.json " + sample.name)
+    os.system("floss -q --output-json floss.json " + sample.name + " > /dev/null" )
 
 #    f = open("strings.txt", "r")
 #    sample.strings = f.read().splitlines()
@@ -125,14 +125,21 @@ def format(sample):
         if sample.floss:
             output += "<h2>FLOSS Results</h2>"
             for key in sample.floss["strings"]:
-                output += "<h4>" + key.replace("_", " ") + "</h3>"
-                if sample.floss["strings"][key]:
+                output += "<h4>" + key.replace("_", " ") + "</h4>"
+                if key == "decoded_strings":
                     output += "<ul>"
                     for string in sample.floss["strings"][key]:
                         output += "<li>" + string + "</li>"
                     output += "</ul>"
+
+                if sample.floss["strings"][key]:
+                    output += "<ul>"
+                    for string in sample.floss["strings"][key]:
+                        #Replaces less than symbol with html entity as was causing bug that was creating unclosed comments
+                        output += "<li>" + string.replace("<", "&lt") + "</li>"
+                    output += "</ul>"
                 else:
-                    output += "FLOSS found 0 " + key.replace("_", " ") 
+                    output += "<p>FLOSS found 0 " + key.replace("_", " ") + "</p>"
 
     except AttributeError:
         pass
@@ -143,7 +150,7 @@ def format(sample):
             output += "<p>Here are the capabilities capa found: </p>"
             output += "<ul>"
             for key in sample.capa["rules"]:
-                output+= "<li>" + key + "</li>"
+                output += "<li>" + key + "</li>"
             output += "</ul>"
                 
         else:
@@ -224,9 +231,11 @@ def analysis(sample):
         wordlist = f.read().splitlines()
         f.close()
         suspicious = set()
-
+        
         for key in sample.floss["strings"]:
+            print(key)
             for string in sample.floss["strings"][key]:
+                print(key + "    ---> " + string)
                 for word in wordlist:
                     if word in string.lower():
                         suspicious.add(string)
