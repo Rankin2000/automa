@@ -2,7 +2,7 @@ import socket
 import os
 import time
 
-HOST = '192.168.164.140'
+HOST = '192.168.164.145'
 PORT = 8080
 BUFFER_SIZE = 4096
 
@@ -11,7 +11,6 @@ def send(filename):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
             s.send(filename.encode('utf-8'))
-            print(str(filename.encode('utf-8')))
 
             with open(filename, "rb") as f:
                 while True:
@@ -24,6 +23,8 @@ def send(filename):
         print("Can't connect to Virtual Machine")
 
         raise
+
+
 def receive():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", PORT))
@@ -33,9 +34,9 @@ def receive():
         with conn:
             data = conn.recv(BUFFER_SIZE).decode()
 
-            print(data)
 
     return data
 
 if __name__ == "__main__":
-    send("Sample2.exe")
+#    send("helloworld.exe")
+    print(receive())

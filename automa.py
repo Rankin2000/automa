@@ -28,6 +28,7 @@ class Sample:
         self.size = os.path.getsize(name) 
         self.malware = False
 
+        self.reasons = {}
 def strings(sample):
     os.system("floss -q --output-json floss.json " + sample.name + " > /dev/null" )
 
@@ -207,18 +208,28 @@ def unpacker(sample):
     with open("samplecapa") as f:
         sample.capaunpacked = json.load(f)
 
-def memoryanalysis(): 
-    volatility.getdump()
+def memoryanalysis(sample): 
     sample.ramscan = volatility.plugin("ramscan")
     sample.cmdcheck = volatility.plugin("cmdcheck")
-
     
-    print(sample.ramscan)
-    print(sample.cmdcheck)
+    #Ramscan
+    evidence = []
+    if sample.ramscan:
+        for item in sample.ramscan["rows"]:
+            if item[1] == sample.pid and item[-1]:
+                evidence.append("The sample\'s PID " + sample.pid + " was found to have " + item[-1])
+            elif item[-1]:
+                evidence.append("The process " + item[0] + " was also found to have " + item[-1])
+        sample.reasons["Volatility RAMScan"] = evidence
+
+    evidence = []
+    #CMDCheck
+    #if sample.cmdcheck:
+    #    for item in sample.cmdcheck["rows"]:
+    #        evidence.append("CMD Check found
 
 
 def analysis(sample):
-    sample.reasons = {}
     
     malicious = []
     try:
@@ -286,6 +297,8 @@ def analysis(sample):
                 sample.reasons["CAPAUnpacked"] = suspicious
     except AttributeError:
         pass
+
+    
  
 #Creates list based on files passed
 samples = []
@@ -302,12 +315,16 @@ for sample in samples:
 
 #    print("\n\n\n" + str(str(sample.size).encode())+ "\n\n")
     sockets.send(sample.name)
-    memoryanalysis()
+    sample.pid = sockets.receive()
+    volatility.getdump()
+    memoryanalysis(sample)
+
+    print("PID = " + sample.pid)
 
     #volatility.run()
     #saveOutput() 
 
-    print(sockets.receive())
+    #print(sockets.receive())
     analysis(sample)
 
     if args.output:
