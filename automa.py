@@ -9,6 +9,7 @@ import hashlib
 import pefile
 import vt
 import json
+import sockets, volatility
 
 #VirusTotal API Key
 api = "71f11256d158446b715bc3410886630f782ae6a10e151e2fb048b84f287b307d"
@@ -77,7 +78,8 @@ def virustotal(sample):
             file = client.get_object("/files/" + sample.md5)
         except:
             with open(sample.name, "rb") as f:
-                analysis = client.scan_file(sample.name, wait_for_completion=True)
+                analysis = client.scan_file(f, wait_for_completion=True)
+                
             file = client.get_object("/files/" + sample.md5)
 
         client.close()
@@ -191,6 +193,8 @@ def format(sample):
             output += "The detection rate is: " + str(len(sample.reasons["VirusTotal"])) + "/" + str(len(sample.results))
     except AttributeError:
         pass
+    except KeyError:
+        pass
 
     return output
 
@@ -202,7 +206,16 @@ def unpacker(sample):
 
     with open("samplecapa") as f:
         sample.capaunpacked = json.load(f)
- 
+
+def memoryanalysis(): 
+    volatility.getdump()
+    sample.ramscan = volatility.plugin("ramscan")
+    sample.cmdcheck = volatility.plugin("cmdcheck")
+
+    
+    print(sample.ramscan)
+    print(sample.cmdcheck)
+
 
 def analysis(sample):
     sample.reasons = {}
@@ -233,13 +246,10 @@ def analysis(sample):
         suspicious = set()
         
         for key in sample.floss["strings"]:
-            print(key)
             for string in sample.floss["strings"][key]:
-                print(key + "    ---> " + string)
                 for word in wordlist:
                     if word in string.lower():
                         suspicious.add(string)
-                        print(string)
         if suspicious:
             sample.malware = True
             sample.reasons["FLOSS"] = suspicious
@@ -288,8 +298,16 @@ for sample in samples:
     peFile(sample)
     capa(sample)
     virustotal(sample)
+
+
+#    print("\n\n\n" + str(str(sample.size).encode())+ "\n\n")
+    sockets.send(sample.name)
+    memoryanalysis()
+
+    #volatility.run()
     #saveOutput() 
 
+    print(sockets.receive())
     analysis(sample)
 
     if args.output:
