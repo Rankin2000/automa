@@ -2,21 +2,22 @@ import os
 import json
 
 def getdump():
+    #Remove previous memory dump as it doesn't like overwriting
+    os.system("rm dump.elf")
+    #Get new memory dump
     os.system("VBoxManage debugvm 'vm' dumpvmcore --filename=dump.elf")
 
 def plugin(plugin):
+    #Remove previous json files as plugin doesn't like overwriting
+    os.system("rm /home/debian/Desktop/honours/volatility/" + plugin + ".json")
+    #Run plugin
     os.system("/home/debian/Desktop/honours/volatility2.6_standalone --plugins='/home/debian/volatility-plugins/" + plugin + "' --profile='Win7SP1x64' -f /home/debian/Desktop/honours/dump.elf " + plugin + " --output=json --output-file=/home/debian/Desktop/honours/volatility/" + plugin + ".json")
 
-    with open("/home/debian/Desktop/honours/volatility/" + plugin + ".json") as volatility:
-        data = json.load(volatility)
 
-    return data 
-
-
-def report():
-    pass
-
-
+    if os.path.isfile("/home/debian/Desktop/honours/volatility/" + plugin + ".json"):
+        with open("/home/debian/Desktop/honours/volatility/" + plugin + ".json") as volatility:
+            data = json.load(volatility)
+        return data 
 
 if __name__ == "__main__":
 

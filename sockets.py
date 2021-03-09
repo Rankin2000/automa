@@ -2,7 +2,7 @@ import socket
 import os
 import time
 
-HOST = '192.168.164.145'
+HOST = '192.168.164.147'
 PORT = 8080
 BUFFER_SIZE = 4096
 
@@ -19,9 +19,12 @@ def send(filename):
                         break
                     s.send(data)
                     print("sending..")
-    except:
-        print("Can't connect to Virtual Machine")
 
+        return True
+    except ConnectionRefusedError: 
+        print("Can't connect to Virtual Machine")
+        return False
+    else:
         raise
 
 

@@ -10,6 +10,8 @@ import pefile
 import vt
 import json
 import sockets, volatility
+import threading
+
 
 #VirusTotal API Key
 api = "71f11256d158446b715bc3410886630f782ae6a10e151e2fb048b84f287b307d"
@@ -30,6 +32,7 @@ class Sample:
 
         self.reasons = {}
 def strings(sample):
+    print("Finding strings in sample using FLOSS...")
     os.system("floss -q --output-json floss.json " + sample.name + " > /dev/null" )
 
 #    f = open("strings.txt", "r")
@@ -39,6 +42,7 @@ def strings(sample):
         sample.floss = json.load(f)
     
 def peFile(sample):
+    print("Enumaration using PEFile...")
     pe = pefile.PE(sample.name)
     #help(pefile.PE)    
     if pe.is_exe():
@@ -52,6 +56,7 @@ def peFile(sample):
     sample.peinfo = pe.dump_info()
 
 def capa(sample):
+    print("Finding the capabilities of the sample using capa")
     os.system("./capa -j " + sample.name + " > samplecapa")
 
 
@@ -73,6 +78,7 @@ def capa(sample):
 #        print("\n\n")
 
 def virustotal(sample):
+    print("Uploading to VirusTotal...")
     try:
         client = vt.Client(api)
         try:
@@ -197,11 +203,41 @@ def format(sample):
     except KeyError:
         pass
 
+    if sample.ramscan or sample.cmdcheck:
+        output += "<h2>Volatility</h2>"
+        if sample.ramscan:
+            output += "<h3>Plugin: Ramscan</h3>"
+            output += "<table><tr>"
+            for column in sample.ramscan["columns"]:
+                output += "<th>" + column + "</th>"
+            output += "</tr>"
+
+            for row in sample.ramscan["rows"]:
+                output += "<tr>"
+                for item in row:
+                    output += "<td>" + str(item) + "</td>"
+                output += "</tr>"
+        if sample.cmdcheck:
+            output += "<h3>Plugin: CMDCheck</h3>"
+            output += "<table><tr>"
+            for column in sample.cmdcheck["columns"]:
+                output += "<th>" + column + "</th>"
+            output += "</tr>"
+
+            for row in sample.cmdcheck["columns"]:
+                output += "<tr>"
+                for item in row:
+                    output += "<td>" + str(item) + "</td>"
+                output += "</tr>"
+
+
     return output
 
 def unpacker(sample):
+    print("Unpacking sample...")
     os.system("unipacker " + sample.name)
     
+    print("Finding capabilites using capa on unpacked sample...")
     os.system("./capa -j unpacked_" + sample.name + " > samplecapa")
 
 
@@ -209,6 +245,7 @@ def unpacker(sample):
         sample.capaunpacked = json.load(f)
 
 def memoryanalysis(sample): 
+    print("Using volatility to analyse memory dump from VM...")
     sample.ramscan = volatility.plugin("ramscan")
     sample.cmdcheck = volatility.plugin("cmdcheck")
     
@@ -216,11 +253,17 @@ def memoryanalysis(sample):
     evidence = []
     if sample.ramscan:
         for item in sample.ramscan["rows"]:
-            if item[1] == sample.pid and item[-1]:
-                evidence.append("The sample\'s PID " + sample.pid + " was found to have " + item[-1])
-            elif item[-1]:
-                evidence.append("The process " + item[0] + " was also found to have " + item[-1])
-        sample.reasons["Volatility RAMScan"] = evidence
+            try:
+                if item[1] == sample.pid and item[-1]:
+                    evidence.append("The sample\'s PID " + sample.pid + " was found to have " + item[-1])
+                elif item[-1]:
+                    evidence.append("The process " + item[0] + " was also found to have " + item[-1])
+            except AttributeError:
+                pass
+
+        if evidence:
+            sample.reasons["Volatility RAMScan"] = evidence
+
 
     evidence = []
     #CMDCheck
@@ -299,6 +342,12 @@ def analysis(sample):
         pass
 
     
+def runsample(sample):
+    print("Sending sample to VM to run...")
+    #If sample succesfully sent get PID from socket
+    if sockets.send(sample.name):
+        sample.pid = sockets.receive()
+    volatility.getdump()
  
 #Creates list based on files passed
 samples = []
@@ -307,6 +356,14 @@ for file in args.sample:
 
 #Scan each file that was passed
 for sample in samples:
+
+
+    #Send sample to server and get pid in return
+    thread = threading.Thread(target=runsample, args=(sample,))
+    thread.start()
+
+
+
     strings(sample)
     peFile(sample)
     capa(sample)
@@ -314,27 +371,25 @@ for sample in samples:
 
 
 #    print("\n\n\n" + str(str(sample.size).encode())+ "\n\n")
-    sockets.send(sample.name)
-    sample.pid = sockets.receive()
-    volatility.getdump()
+    
+    thread.join()
     memoryanalysis(sample)
-
-    print("PID = " + sample.pid)
 
     #volatility.run()
     #saveOutput() 
 
     #print(sockets.receive())
     analysis(sample)
-
+    
+    print("Analysis Complete.\nReport being created...")
     if args.output:
         output_file = args.output
     else:
         output_file = open(sample.name + "output.html", "w") 
-
     output_file.write(format(sample))
   
     output_file.close()
+    print("Finished")
 
 
 
