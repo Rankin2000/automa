@@ -230,7 +230,6 @@ def format(sample):
                     output += "<td>" + str(item) + "</td>"
                 output += "</tr>"
 
-
     return output
 
 def unpacker(sample):
@@ -389,7 +388,13 @@ for sample in samples:
     output_file.write(format(sample))
   
     output_file.close()
-    print("Finished")
+    print("Report Finished")
+    print("Resetting VM")
+
+
+    os.system("VBoxManage controlvm poweroff vm")
+    os.system("VBoxManage snapshot vm restore Snapshot")
+    os.system("VBoxManage startvm vm")
 
 
 
