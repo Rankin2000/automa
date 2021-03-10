@@ -9,6 +9,7 @@ import hashlib
 import pefile
 import vt
 import json
+import time
 import sockets, volatility
 import threading
 
@@ -343,10 +344,33 @@ def analysis(sample):
     
 def runsample(sample):
     print("Sending sample to VM to run...")
+    if subprocess.check_output(["vboxmanage", "list", "runningvms"]):
+        running = True
+    else:
+        running = False
+
+
+
     #If sample succesfully sent get PID from socket
-    if sockets.send(sample.name):
+    if running:
+#        while not sockets.send(sample.name):
+#            pass
+
+
+        while not sockets.send(sample.name):
+            time.sleep(1)
+            pass
+
+        #while not worked:
+        #    worked = sockets.send(sample.name)
+        #    print("Sample failed to s but VM running, trying again...")
+
+        #if worked:
         sample.pid = sockets.receive()
-    volatility.getdump()
+#    if sockets.send(sample.name):
+#        sample.pid = sockets.receive()
+#    volatility.getdump()
+
  
 #Creates list based on files passed
 samples = []
