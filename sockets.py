@@ -2,7 +2,7 @@ import socket
 import os
 import time
 
-HOST = '192.168.164.147'
+HOST = '192.168.56.2'
 PORT = 8080
 BUFFER_SIZE = 4096
 
@@ -10,36 +10,50 @@ def send(filename):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
-            s.send(filename.encode('utf-8'))
+            s.send(filename.encode())
+            response = s.recv(BUFFER_SIZE)
+            if response:
+                with open(filename, "rb") as f:
+                    while True:
+                        data = f.read(BUFFER_SIZE)
+                        if not data:
+                            break
+                        s.sendall(data)
+                        print("Sending..")
+                #print(PID)
 
-            with open(filename, "rb") as f:
-                while True:
-                    data = f.read(BUFFER_SIZE)
-                    if not data:
-                        break
-                    s.send(data)
-                    print("sending..")
-
-        return True
+                return True
+            else:
+                return False
     except ConnectionRefusedError: 
         print("Can't connect to Virtual Machine")
         return False
-    else:
-        raise
-
 
 def receive():
+    fulldata = ""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", PORT))
         s.listen()
         conn, addr = s.accept()
     
         with conn:
-            data = conn.recv(BUFFER_SIZE).decode()
+            while True:
+                data = conn.recv(BUFFER_SIZE).decode()
 
-
-    return data
+                if not data:
+                    break
+                fulldata += data
+    return fulldata
 
 if __name__ == "__main__":
-#    send("helloworld.exe")
-    print(receive())
+    while not send("helloworld.exe"):
+        pass
+
+    json = receive()
+    f = open("pesieve.json", "w")
+    f.write(json)
+    f.close()
+    print(json)
+    time.sleep(1)
+
+
