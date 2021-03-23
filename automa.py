@@ -13,7 +13,6 @@ import time
 import sockets, volatility
 import threading
 
-
 #VirusTotal API Key
 api = "71f11256d158446b715bc3410886630f782ae6a10e151e2fb048b84f287b307d"
 
@@ -32,13 +31,11 @@ class Sample:
         self.malware = False
 
         self.reasons = {}
+
 def strings(sample):
     print("Finding strings in sample using FLOSS...")
     os.system("floss -q --output-json floss.json " + sample.name + " > /dev/null" )
 
-#    f = open("strings.txt", "r")
-#    sample.strings = f.read().splitlines()
-#    f.close()
     with open("floss.json") as f:
         sample.floss = json.load(f)
     
@@ -47,9 +44,9 @@ def peFile(sample):
     pe = pefile.PE(sample.name)
     #help(pefile.PE)    
     if pe.is_exe():
-        print("File is exe")
+        sample.filetype = "exe"
     elif pe.is_dll():
-        print("File is dll")
+        sample.filetype = "dll"
 
 
     sample.pewarnings =  pe.get_warnings()
@@ -63,20 +60,6 @@ def capa(sample):
 
     with open("samplecapa") as f:
         sample.capa = json.load(f)
- 
-
-   
-
-        #print(sample.capa["rules"][key])
-#    for key in sample.capa["rules"]:
-#        for item in sample.capa["rules"][key]["meta"]["scope"]:
-#            print(item)
-#            scope = ""
-#            for character in sample.capa["rules"][key]["meta"]["scope"]:
-#                scope += character.replace("\n", "")
-#
-#            print(scope)
-#        print("\n\n")
 
 def virustotal(sample):
     print("Uploading to VirusTotal...")
@@ -101,6 +84,20 @@ def virustotal(sample):
         client.close()
         pass
 
+def inetsimformat(pid):
+    try:
+        #INetSim report is made as root so needs permission changes
+        os.system("sudo chmod 444 /home/debian/Desktop/honours/inetsim/report." + str(pid) + ".txt > /dev/null")
+
+        output = "<h3>INetSim</h3>"
+        with open("/home/debian/Desktop/honours/inetsim/report." + str(pid) + ".txt") as f:
+            for line in f.readlines():
+                output += "<pre>" + line + "</pre>"
+        return output
+    except:
+        return ""
+        
+    
 def format(sample):
     output = "<body style='font-family:Arial;'>"
     output += "<h1>" + sample.name + "</h1>\n"
@@ -110,8 +107,7 @@ def format(sample):
     output += "</table>"
 
     if sample.malware:
-        output += "<p>The sample is believed to be malicious based on Automa's analysis.</p>"
-        output += "<h5>Reasons:</h5>"
+        output += "<h5>Here are some items that Automa found to be suspicious:</h5>"
         output += "<table>"
         for reason in sample.reasons:
             output += "<tr><td>" + reason + "</td><td>"
@@ -122,7 +118,7 @@ def format(sample):
             output += "</ul></td></tr>"
         output += "</table>"
     else:
-        output += "<p>The sample cannot be determined to be malicious based on Automa's analysis. Refer to the results below for a better idea</p>"
+        output += "<p>Automa failed to find any suspicious items in the sample. However, refer to the results below for a better idea of the sample</p>"
     
     try:
         if sample.peinfo:
@@ -204,33 +200,58 @@ def format(sample):
     except KeyError:
         pass
 
-    if sample.ramscan or sample.cmdcheck:
-        output += "<h2>Volatility</h2>"
-        if sample.ramscan:
-            output += "<h3>Plugin: Ramscan</h3>"
-            output += "<table><tr>"
-            for column in sample.ramscan["columns"]:
-                output += "<th>" + column + "</th>"
-            output += "</tr>"
+    try:
+        if sample.inetsimpid:
+            output += inetsimformat(sample.inetsimpid)
+    except AttributeError:
+        pass
 
-            for row in sample.ramscan["rows"]:
-                output += "<tr>"
-                for item in row:
-                    output += "<td>" + str(item) + "</td>"
+    try:
+        if sample.pesieve:
+            output += "<h2>PE-Sieve</h2>"
+            output += "<p>PE-Sieve scanned a total of " + str(sample.pesieve["scanned"]["total"]) + " modules</p>"
+            
+            output += "<table>"
+            for item in sample.pesieve["scanned"]["modified"]:
+                output += "<tr><th>" + item.replace("_", " ") + "</th><td>" + str(sample.pesieve["scanned"]["modified"][item]) + "</td></tr>"
+            output += "</table>"
+             
+    except AttributeError:
+        pass
+
+    try: 
+        if sample.ramscan or sample.cmdcheck:
+            output += "<h2>Volatility</h2>"
+            if sample.ramscan:
+                output += "<h3>Plugin: Ramscan</h3>"
+                output += "<table><tr>"
+                for column in sample.ramscan["columns"]:
+                    output += "<th>" + column + "</th>"
                 output += "</tr>"
-        if sample.cmdcheck:
-            output += "<h3>Plugin: CMDCheck</h3>"
-            output += "<table><tr>"
-            for column in sample.cmdcheck["columns"]:
-                output += "<th>" + column + "</th>"
-            output += "</tr>"
 
-            for row in sample.cmdcheck["columns"]:
-                output += "<tr>"
-                for item in row:
-                    output += "<td>" + str(item) + "</td>"
+                for row in sample.ramscan["rows"]:
+                    output += "<tr>"
+                    for item in row:
+                        output += "<td>" + str(item) + "</td>"
+                    output += "</tr>"
+                output += "</table>"
+
+            if sample.cmdcheck:
+                output += "<h3>Plugin: CMDCheck</h3>"
+                output += "<table><tr>"
+                for column in sample.cmdcheck["columns"]:
+                    output += "<th>" + column + "</th>"
                 output += "</tr>"
 
+                for row in sample.cmdcheck["rows"]:
+                    output += "<tr>"
+                    for item in row:
+                        output += "<td>" + str(item) + "</td>"
+                    output += "</tr>"
+                output += "</table>"
+    except AttributeError:
+        pass
+    
     return output
 
 def unpacker(sample):
@@ -244,7 +265,7 @@ def unpacker(sample):
     with open("samplecapa") as f:
         sample.capaunpacked = json.load(f)
 
-def memoryanalysis(sample): 
+def dynamicanalysis(sample): 
     print("Using volatility to analyse memory dump from VM...")
     sample.ramscan = volatility.plugin("ramscan")
     sample.cmdcheck = volatility.plugin("cmdcheck")
@@ -253,23 +274,33 @@ def memoryanalysis(sample):
     evidence = []
     if sample.ramscan:
         for item in sample.ramscan["rows"]:
-            try:
-                if item[1] == sample.pid and item[-1]:
-                    evidence.append("The sample\'s PID " + sample.pid + " was found to have " + item[-1])
-                elif item[-1]:
-                    evidence.append("The process " + item[0] + " was also found to have " + item[-1])
-            except AttributeError:
-                pass
+
+#            if item[1] == sample.pid and item[-1]:
+#                evidence.append("The sample\'s PID " + sample.pid + " was found to have " + item[-1])
+            if item[-1]:
+
+                evidence.append("The process " + item[0] + " was also found to have " + item[-1])
 
         if evidence:
             sample.reasons["Volatility RAMScan"] = evidence
 
 
-    evidence = []
+    #evidence = []
     #CMDCheck
     #if sample.cmdcheck:
     #    for item in sample.cmdcheck["rows"]:
     #        evidence.append("CMD Check found
+
+    #PE-Sieve
+    evidence = []
+    if sample.pesieve:
+        for item in sample.pesieve["scanned"]["modified"]:
+            if item != "total":
+                if sample.pesieve["scanned"]["modified"][item]:
+                    evidence.append("Found " + str(sample.pesieve["scanned"]["modified"][item]) + " modules that were " + item)
+                        
+        if evidence:
+            sample.reasons["PE-Sieve"] = evidence
 
 
 def analysis(sample):
@@ -351,26 +382,28 @@ def runsample(sample):
 
 
 
-    #If sample succesfully sent get PID from socket
+    #If vm running 
     if running:
-#        while not sockets.send(sample.name):
-#            pass
 
-
+        #Start INETSIM
+        proc = subprocess.Popen(['sudo', 'inetsim', '--report-dir', '/home/debian/Desktop/honours/inetsim/'])
+        sample.inetsimpid = proc.pid + 1
+        #Send 
         while not sockets.send(sample.name):
             time.sleep(1)
             pass
 
-        #while not worked:
-        #    worked = sockets.send(sample.name)
-        #    print("Sample failed to s but VM running, trying again...")
+        sockets.receive()
+        with open("pesieve.json") as f:
+            sample.pesieve = json.load(f)
 
-        #if worked:
-        sample.pid = sockets.receive()
-#    if sockets.send(sample.name):
-#        sample.pid = sockets.receive()
-#    volatility.getdump()
 
+        #Sleep to allow for sample to run    
+        time.sleep(10)
+        os.system("sudo kill " + str(sample.inetsimpid))
+
+
+        dynamicanalysis(sample)
  
 #Creates list based on files passed
 samples = []
@@ -380,7 +413,10 @@ for file in args.sample:
 #Scan each file that was passed
 for sample in samples:
 
+    os.system("VBoxManage snapshot vm restore automa")
+    os.system("VBoxManage startvm vm")
 
+    time.sleep(5)
     #Send sample to server and get pid in return
     thread = threading.Thread(target=runsample, args=(sample,))
     thread.start()
@@ -392,18 +428,9 @@ for sample in samples:
     capa(sample)
     virustotal(sample)
 
-
-#    print("\n\n\n" + str(str(sample.size).encode())+ "\n\n")
-    
     thread.join()
-    memoryanalysis(sample)
 
-    #volatility.run()
-    #saveOutput() 
-
-    #print(sockets.receive())
     analysis(sample)
-    
     print("Analysis Complete.\nReport being created...")
     if args.output:
         output_file = args.output
@@ -414,12 +441,7 @@ for sample in samples:
     output_file.close()
     print("Report Finished")
     print("Resetting VM")
+    os.system("VBoxManage controlvm vm poweroff")
 
-
-    os.system("VBoxManage controlvm poweroff vm")
-    os.system("VBoxManage snapshot vm restore Snapshot")
-    os.system("VBoxManage startvm vm")
-
-
-
+    time.sleep(3)
 
