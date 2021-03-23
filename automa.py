@@ -393,9 +393,9 @@ def runsample(sample):
             time.sleep(1)
             pass
 
-        sockets.receive()
-        with open("pesieve.json") as f:
-            sample.pesieve = json.load(f)
+        #sample.pesieve = json.load(sockets.receive())
+        print(sockets.receive())
+
 
 
         #Sleep to allow for sample to run    
