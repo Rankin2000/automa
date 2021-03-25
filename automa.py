@@ -10,7 +10,7 @@ import pefile
 import vt
 import json
 import time
-import sockets, volatility
+import sockets, volatility, formatter
 import threading
 
 #VirusTotal API Key
@@ -84,176 +84,7 @@ def virustotal(sample):
         client.close()
         pass
 
-def inetsimformat(pid):
-    try:
-        #INetSim report is made as root so needs permission changes
-        os.system("sudo chmod 444 /home/debian/Desktop/honours/inetsim/report." + str(pid) + ".txt > /dev/null")
-
-        output = "<h3>INetSim</h3>"
-        with open("/home/debian/Desktop/honours/inetsim/report." + str(pid) + ".txt") as f:
-            for line in f.readlines():
-                output += "<pre>" + line + "</pre>"
-        return output
-    except:
-        return ""
-        
     
-def format(sample):
-    output = "<body style='font-family:Arial;'>"
-    output += "<h1>" + sample.name + "</h1>\n"
-    output +="<table><tr><th>Filename</th><td>" + sample.name + "</td></tr>"
-    output += "<tr><th>MD5</th><td>" + sample.md5 + "</td></tr>"
-    output += "<tr><th>ImpHash</th><td>" + sample.imphash + "</td></tr>"
-    output += "</table>"
-
-    if sample.malware:
-        output += "<h5>Here are some items that Automa found to be suspicious:</h5>"
-        output += "<table>"
-        for reason in sample.reasons:
-            output += "<tr><td>" + reason + "</td><td>"
-            output += "<ul>"
-
-            for evidence in sample.reasons[reason]:
-                output += "<li>" + evidence + "</li>"
-            output += "</ul></td></tr>"
-        output += "</table>"
-    else:
-        output += "<p>Automa failed to find any suspicious items in the sample. However, refer to the results below for a better idea of the sample</p>"
-    
-    try:
-        if sample.peinfo:
-            output += "<h2>PEFile Dump</h2>"
-            output += "<p>" + sample.peinfo.replace('\n', '<br>') + "</p>"
-    except AttributeError:
-        pass
-
-    try:
-        if sample.floss:
-            output += "<h2>FLOSS Results</h2>"
-            for key in sample.floss["strings"]:
-                output += "<h4>" + key.replace("_", " ") + "</h4>"
-                if key == "decoded_strings":
-                    output += "<ul>"
-                    for string in sample.floss["strings"][key]:
-                        output += "<li>" + string + "</li>"
-                    output += "</ul>"
-
-                if sample.floss["strings"][key]:
-                    output += "<ul>"
-                    for string in sample.floss["strings"][key]:
-                        #Replaces less than symbol with html entity as was causing bug that was creating unclosed comments
-                        output += "<li>" + string.replace("<", "&lt") + "</li>"
-                    output += "</ul>"
-                else:
-                    output += "<p>FLOSS found 0 " + key.replace("_", " ") + "</p>"
-
-    except AttributeError:
-        pass
-    try:
-        if sample.capa:
-            output += "<h2>FireEye's Capa</h2>"
-        if sample.capa["rules"]:
-            output += "<p>Here are the capabilities capa found: </p>"
-            output += "<ul>"
-            for key in sample.capa["rules"]:
-                output += "<li>" + key + "</li>"
-            output += "</ul>"
-                
-        else:
-            output += "<p>Capa found 0 capabilities in this sample. This could be because it is safe or the file successfully hid its functionality using tools like packers</p>"
-        output += "<p>Manually run Capa on the sample if more detailed is required</p>"
-    except AttributeError:
-        pass
-
-    try: 
-        if sample.capaunpacked:
-            output += "<h2>Unpacked with Unipacker and Capa</h2>"
-
-        if sample.capaunpacked["rules"]:
-           output += "<p>Here are the capabilities capa found on the attempted unpack: </p>"
-           output += "<ul>"
-           for key in sample.capaunpacked["rules"]:
-               output+= "<li>" + key + "</li>"
-           output += "</ul>"     
-        else: 
-            output += "<p>Capa found 0 capabilities in the unpacked version of the sample.</p>"
-    except AttributeError:
-        pass
-
-    try:
-        if sample.results:
-            output += "<h2>VirusTotal Results</h2>"
-            output += "<table>"
-            for key in sample.results:
-                output += "<tr>"
-                if sample.results[key]["result"]:
-                    output += "<th>" + key + "</th><td>" + sample.results[key]["category"] + "</td><td>" + sample.results[key]["result"] + "</td>"
-                else:
-
-                    output += "<th>" + key + "</th><td>" + sample.results[key]["category"] + "</td>"
-                output += "</tr>"
-
-            output += "</table>"
-            output += "The detection rate is: " + str(len(sample.reasons["VirusTotal"])) + "/" + str(len(sample.results))
-    except AttributeError:
-        pass
-    except KeyError:
-        pass
-
-    try:
-        if sample.inetsimpid:
-            output += inetsimformat(sample.inetsimpid)
-    except AttributeError:
-        pass
-
-    try:
-        if sample.pesieve:
-            output += "<h2>PE-Sieve</h2>"
-            output += "<p>PE-Sieve scanned a total of " + str(sample.pesieve["scanned"]["total"]) + " modules</p>"
-            
-            output += "<table>"
-            for item in sample.pesieve["scanned"]["modified"]:
-                output += "<tr><th>" + item.replace("_", " ") + "</th><td>" + str(sample.pesieve["scanned"]["modified"][item]) + "</td></tr>"
-            output += "</table>"
-             
-    except AttributeError:
-        pass
-
-    try: 
-        if sample.ramscan or sample.cmdcheck:
-            output += "<h2>Volatility</h2>"
-            if sample.ramscan:
-                output += "<h3>Plugin: Ramscan</h3>"
-                output += "<table><tr>"
-                for column in sample.ramscan["columns"]:
-                    output += "<th>" + column + "</th>"
-                output += "</tr>"
-
-                for row in sample.ramscan["rows"]:
-                    output += "<tr>"
-                    for item in row:
-                        output += "<td>" + str(item) + "</td>"
-                    output += "</tr>"
-                output += "</table>"
-
-            if sample.cmdcheck:
-                output += "<h3>Plugin: CMDCheck</h3>"
-                output += "<table><tr>"
-                for column in sample.cmdcheck["columns"]:
-                    output += "<th>" + column + "</th>"
-                output += "</tr>"
-
-                for row in sample.cmdcheck["rows"]:
-                    output += "<tr>"
-                    for item in row:
-                        output += "<td>" + str(item) + "</td>"
-                    output += "</tr>"
-                output += "</table>"
-    except AttributeError:
-        pass
-    
-    return output
-
 def unpacker(sample):
     print("Unpacking sample...")
     os.system("unipacker " + sample.name)
@@ -307,8 +138,8 @@ def analysis(sample):
     
     malicious = []
     try:
-        for key in sample.results:
-            if sample.results[key]["category"] == "malicious":
+        for key in sample.virustotal:
+            if sample.virustotal[key]["category"] == "malicious":
                 malicious.append(key)
             #elif results[key] == "undetected":   
         if malicious:
@@ -393,8 +224,8 @@ def runsample(sample):
             time.sleep(1)
             pass
 
-        #sample.pesieve = json.load(sockets.receive())
-        print(sockets.receive())
+        sample.pesieve = json.loads(sockets.receive())
+        #print(sockets.receive())
 
 
 
@@ -413,13 +244,13 @@ for file in args.sample:
 #Scan each file that was passed
 for sample in samples:
 
-    os.system("VBoxManage snapshot vm restore automa")
-    os.system("VBoxManage startvm vm")
+#    os.system("VBoxManage snapshot vm restore automa")
+#    os.system("VBoxManage startvm vm")
 
-    time.sleep(5)
+#    time.sleep(5)
     #Send sample to server and get pid in return
-    thread = threading.Thread(target=runsample, args=(sample,))
-    thread.start()
+#    thread = threading.Thread(target=runsample, args=(sample,))
+#    thread.start()
 
 
 
@@ -428,7 +259,7 @@ for sample in samples:
     capa(sample)
     virustotal(sample)
 
-    thread.join()
+ #   thread.join()
 
     analysis(sample)
     print("Analysis Complete.\nReport being created...")
@@ -436,7 +267,8 @@ for sample in samples:
         output_file = args.output
     else:
         output_file = open(sample.name + "output.html", "w") 
-    output_file.write(format(sample))
+
+    output_file.write(formatter.html(sample))
   
     output_file.close()
     print("Report Finished")
