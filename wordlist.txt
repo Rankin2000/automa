@@ -1,0 +1,17 @@
+mal
+trojan
+virus
+ransomware
+rootkit
+backdoor
+evasion
+worm
+spy
+firewall
+anti
+logger
+password
+listen
+command
+upx
+pack
