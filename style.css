@@ -5,18 +5,22 @@ body {
 
 #navbar {
 	list-style-type: none;
+	top: 0;
+	left:0;
+	z-index: 0;
 	margin: 0;
 	padding: 0;
-	width: 25%;
+	width: 200px;
 	position: fixed;
 	height: 100%;
 	overflow: auto;
+	padding-top: 20px;
 }
 
 
 
 #content {
-	margin-left: 10%;
+	margin-left: 200px;
 	padding: 1px 16px;
 }
 
