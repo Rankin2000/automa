@@ -34,7 +34,7 @@ class Sample:
 
 def strings(sample):
     print("Finding strings in sample using FLOSS...")
-    os.system("floss -q --output-json floss.json " + sample.name + " > /dev/null" )
+    os.system("./floss -q --output-json floss.json " + sample.name + " > /dev/null" )
 
     with open("floss.json") as f:
         sample.floss = json.load(f)
