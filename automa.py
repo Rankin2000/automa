@@ -98,6 +98,7 @@ def unpacker(sample):
 
 def dynamicanalysis(sample): 
     print("Using volatility to analyse memory dump from VM...")
+    volatility.getdump()
     sample.ramscan = volatility.plugin("ramscan")
     sample.cmdcheck = volatility.plugin("cmdcheck")
     
@@ -217,7 +218,7 @@ def runsample(sample):
     if running:
 
         #Start INETSIM
-        proc = subprocess.Popen(['sudo', 'inetsim', '--report-dir', '/home/debian/Desktop/honours/inetsim/'])
+        proc = subprocess.Popen(['sudo', 'inetsim', '--report-dir', '/home/stuart/Desktop/honours/inetsim/'])
         sample.inetsimpid = proc.pid + 1
         #Send 
         while not sockets.send(sample.name):
@@ -231,7 +232,7 @@ def runsample(sample):
 
         #Sleep to allow for sample to run    
         time.sleep(10)
-        os.system("sudo kill " + str(sample.inetsimpid))
+        os.system("sudo pkill inetsim") # + str(sample.inetsimpid))
 
 
         dynamicanalysis(sample)
@@ -244,29 +245,32 @@ for file in args.sample:
 #Scan each file that was passed
 for sample in samples:
 
-#    os.system("VBoxManage snapshot vm restore automa")
-#    os.system("VBoxManage startvm vm")
+    os.system("VBoxManage snapshot vm restore Automa")
+    os.system("VBoxManage startvm vm --type headless")
 
-#    time.sleep(5)
+    time.sleep(5)
     #Send sample to server and get pid in return
-#    thread = threading.Thread(target=runsample, args=(sample,))
-#    thread.start()
+    thread = threading.Thread(target=runsample, args=(sample,))
+    thread.start()
 
 
 
     strings(sample)
     peFile(sample)
     capa(sample)
-    virustotal(sample)
+    #virustotal(sample)
 
- #   thread.join()
+    thread.join()
 
     analysis(sample)
     print("Analysis Complete.\nReport being created...")
     if args.output:
         output_file = args.output
     else:
-        output_file = open(sample.name + "output.html", "w") 
+        if not os.path.exists("reports/"):
+            os.mkdir("reports")
+
+        output_file = open("reports/" + sample.name + "output.html", "w") 
 
     output_file.write(formatter.html(sample))
   
