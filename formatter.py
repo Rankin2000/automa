@@ -49,7 +49,7 @@ def html(sample):
 
     try:
         if sample.ramscan or sample.cmdcheck:
-            output += "<li><a href='#volatility'>PE-Sieve</a></li>"
+            output += "<li><a href='#volatility'>Volatility</a></li>"
     except AttributeError:
         pass
 
