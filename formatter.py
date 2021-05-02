@@ -48,7 +48,7 @@ def html(sample):
         pass
 
     try:
-        if sample.inetsim:
+        if sample.inetsimpid:
             output += "<li><a href='#inetsim'>INetSim</a></li>"
     except AttributeError:
         pass
@@ -255,8 +255,10 @@ def inetsimformat(pid):
 
         output = "<h3 id='inetsim'>INetSim</h3>"
         with open("/home/stuart/Desktop/honours/inetsim/report." + str(pid) + ".txt") as f:
+            output += "<pre>"
             for line in f.readlines():
-                output += "<pre>" + line + "</pre>"
+                output += line
+            output += "</pre>"
         return output
     except:
         return ""
