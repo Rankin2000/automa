@@ -156,7 +156,6 @@ def analysis(sample):
         for key in sample.virustotal:
             if sample.virustotal[key]["category"] == "malicious":
                 malicious.append(key)
-            #elif results[key] == "undetected":   
         if malicious:
             sample.suspicious = True
             sample.reasons["VirusTotal"] = malicious
