@@ -1,32 +1,24 @@
 import time
 import subprocess, os
 
-
+#Runs procmon, not used
 def procmon():
     os.system("C:\\Users\IEUser\Downloads\ProcessMonitor\ProcMon.exe -accepteula /backingfile C:\\Users\IEUser\Desktop\log.pml /quiet")
     time.sleep(5)
     os.system("C:\\Users\IEUser\Downloads\ProcessMonitor\ProcMon.exe /terminate")
 
+#Runs file and returns pid
 def run(filename):
-    subprocess.run(["C:\\Users\IEUser\Desktop\\" + filename])
-    tasklist = subprocess.check_output(["tasklist", "/FO", "csv"])
-    tasklist = tasklist.decode().split('\n')
-    for item in tasklist:
-        item = item.replace("\"", "")
-        item = item.split(',')
-        if item[0] == "cmd.exe":
-            print(item[1])
-            return item[1]
+    process = subprocess.Popen("C:\\Users\IEUser\Desktop\\" + filename)
+    return process.pid
 
-
+#Runs pesieve on pid
 def pesieve(pid):
-    os.system("C:\\Users\IEUser\Downloads\pe-sieve64.exe /pid " + pid + " /quiet /json > pe-sieve.json")
-    
-def analyse(filename):
-    #procmon()
-    pid = run(filename)
-    pesieve(pid)
-    return filename
+    os.system("C:\\USers\IEUser\Downloads\pe-sieve64.exe /pid " + str(pid) + " /quiet /json > pe-sieve.json")
 
-if __name__ == "__main__":
-    analyse("helloworld.exe")
+#Run sample and pesieve then return pid
+def analyse(filename):
+    pid = run(filename)
+    print(pid)
+    pesieve(pid)
+    return 
