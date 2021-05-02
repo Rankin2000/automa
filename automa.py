@@ -67,17 +67,18 @@ def virustotal(sample):
         client = vt.Client(api)
         try:
             file = client.get_object("/files/" + sample.md5)
+            print("got file from vt")
         except:
             with open(sample.name, "rb") as f:
                 analysis = client.scan_file(f, wait_for_completion=True)
-                
+                print("uploading file to vt")
             file = client.get_object("/files/" + sample.md5)
 
         client.close()
-        sample.results = {}
+        sample.virustotal = {}
     
         for key in file.last_analysis_results:
-            sample.results[key] = file.last_analysis_results[key]
+            sample.virustotal[key] = file.last_analysis_results[key]
             
 
     except vt.client.aiohttp.ClientConnectorError:
@@ -125,15 +126,17 @@ def dynamicanalysis(sample):
 
     #PE-Sieve
     evidence = []
-    if sample.pesieve:
-        for item in sample.pesieve["scanned"]["modified"]:
-            if item != "total":
-                if sample.pesieve["scanned"]["modified"][item]:
-                    evidence.append("Found " + str(sample.pesieve["scanned"]["modified"][item]) + " modules that were " + item)
-                        
-        if evidence:
-            sample.reasons["PE-Sieve"] = evidence
+    try:
+        if sample.pesieve:
+            for item in sample.pesieve["scanned"]["modified"]:
+                if item != "total" and item != "unreachable_file":
+                    if sample.pesieve["scanned"]["modified"][item]:
+                        evidence.append("Found " + str(sample.pesieve["scanned"]["modified"][item]) + " modules that were " + item)    
+            if evidence:
+                sample.reasons["PE-Sieve"] = evidence
 
+    except:
+        pass
 
 def analysis(sample):
     
@@ -219,23 +222,27 @@ def runsample(sample):
 
         #Start INETSIM
         proc = subprocess.Popen(['sudo', 'inetsim', '--report-dir', '/home/stuart/Desktop/honours/inetsim/'])
-        sample.inetsimpid = proc.pid + 1
-        #Send 
-        while not sockets.send(sample.name):
-            time.sleep(1)
-            pass
+        
 
-        sample.pesieve = json.loads(sockets.receive())
-        #print(sockets.receive())
+        sample.inetsimpid = proc.pid + 1
+        print("INET ID = " + str(sample.inetsimpid))
+
+        #Send 
+        sockets.send(sample.name)
+        try:
+            sample.pesieve = json.loads(sockets.receive())
+        except:
+            pass
 
 
 
         #Sleep to allow for sample to run    
-        time.sleep(10)
-        os.system("sudo pkill inetsim") # + str(sample.inetsimpid))
+        time.sleep(20)
 
 
         dynamicanalysis(sample)
+        os.system("sudo pkill inetsim")
+        time.sleep(2)
  
 #Creates list based on files passed
 samples = []
@@ -247,6 +254,7 @@ for sample in samples:
 
     os.system("VBoxManage snapshot vm restore Automa")
     os.system("VBoxManage startvm vm --type headless")
+#    os.system("VBoxManage startvm vm")
 
     time.sleep(5)
     #Send sample to server and get pid in return
@@ -258,7 +266,7 @@ for sample in samples:
     strings(sample)
     peFile(sample)
     capa(sample)
-    #virustotal(sample)
+    virustotal(sample)
 
     thread.join()
 
