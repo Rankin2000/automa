@@ -52,3 +52,7 @@ The outputted report can be found in the reports directory.
 python3 automa.py sample
 ```
 *Note: Multiple samples can be submitted seperated by a space*
+
+
+### Contact
+Likely you will run into issues and if so free to contact me.
