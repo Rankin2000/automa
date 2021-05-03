@@ -1,4 +1,5 @@
 # Honours
+
 ## Summary
 This a tool that was developed for my 4th year Ethical Hacking Honours Project.
 It attempts to perform automatic malware analysis similar to that of Cuckoo Sandbox.
@@ -12,8 +13,7 @@ It utilises the following tools:
 * Volatility
 * PE-Sieve
 
-
-It then saves the results to an HTML file as well attempting to highlight any supsicious items found by the tools.
+It saves the results to an HTML file as well attempting to highlight any supsicious items found by the tools.
 
 ## Scope
 The tool is quite limited in its scope, it was designed specifically for Portable Executable files and the Virtual Machine agent was only designed Windows 7. 
@@ -21,9 +21,11 @@ The tool is quite limited in its scope, it was designed specifically for Portabl
 ## Installation
 The tool lacks a lot of useful functionality that needs to be implemented in future work for example, it currently uses hard coded directories.
 
-### Setup
+### Requirements
 * Python 3
 * VirtualBox
+
+### Setup
 
 1. Clone repository
 2. Download and Install Requirements
