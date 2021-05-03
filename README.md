@@ -47,8 +47,12 @@ The tool lacks a lot of useful functionality that needs to be implemented in fut
 
 ## Usage
 The tool can be used using the command line. Copy the sample to the automa directory. 
-
+The outputted report can be found in the reports directory.
 ```
 python3 automa.py sample
 ```
 *Note: Multiple samples can be submitted seperated by a space*
+
+
+### Contact
+Likely you will run into issues and if so free to contact me.
