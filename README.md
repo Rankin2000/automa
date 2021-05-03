@@ -33,9 +33,10 @@ The tool lacks a lot of useful functionality that needs to be implemented in fut
     4. Downlaod RAMSCAN and CMDCheck from https://github.com/TazWake/volatility-plugins to directory "volatility" within automa's directory. 
        *Note: Volatility.py utilises hard-coded directories which can be adapted to your setup.*
     6. Install VirusTotal API Python Library, vt-py.
-    7. Install pefile Python library.
-    8. Install unipacker.
-    9. Install INetSim.
+       *Note: You will have to replace the api key in automa.py with your own
+    8. Install pefile Python library.
+    9. Install unipacker.
+    10. Install INetSim.
         1. Configure INetSim to listen to 192.168.56.1 or the Virtual Network Interface IP
 3. Set up Windows 7 VM
     1. Install Python 3.
