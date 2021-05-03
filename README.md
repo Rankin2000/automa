@@ -33,7 +33,7 @@ The tool lacks a lot of useful functionality that needs to be implemented in fut
     4. Downlaod RAMSCAN and CMDCheck from https://github.com/TazWake/volatility-plugins to directory "volatility" within automa's directory. 
        *Note: Volatility.py utilises hard-coded directories which can be adapted to your setup.*
     6. Install VirusTotal API Python Library, vt-py.
-       *Note: You will have to replace the api key in automa.py with your own
+       *Note: You will have to replace the api key in automa.py with your own*
     8. Install pefile Python library.
     9. Install unipacker.
     10. Install INetSim.
