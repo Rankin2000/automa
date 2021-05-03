@@ -8,7 +8,8 @@ import sockets, volatility, formatter
 import threading
 
 #VirusTotal API Key
-api = "71f11256d158446b715bc3410886630f782ae6a10e151e2fb048b84f287b307d"
+api = "replace with your api key"
+
 
 #Command Line Arguments
 parser = argparse.ArgumentParser()
