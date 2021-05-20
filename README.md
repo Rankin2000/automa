@@ -58,4 +58,4 @@ python3 automa.py sample
 
 
 ### Contact
-Likely you will run into issues and if so free to contact me.
+Likely you will run into issues and if so, feel free to contact me.
