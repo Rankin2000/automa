@@ -16,7 +16,7 @@ It utilises the following tools:
 It saves the results to an HTML file as well attempting to highlight any supsicious items found by the tools.
 
 ## Scope
-The tool is quite limited in its scope, it was designed specifically for Portable Executable files and the Virtual Machine agent was only designed Windows 7. 
+The tool is quite limited in its scope, it was designed specifically for Portable Executable files and the Virtual Machine agent was only designed for Windows 7. 
 
 ## Installation
 The tool lacks a lot of useful functionality that needs to be implemented in future work for example, it currently uses hard coded directories.
@@ -32,7 +32,7 @@ The tool lacks a lot of useful functionality that needs to be implemented in fut
     1. Download FLOSS binary to automa's directory.
     2. Download CAPA binary to automa's directory.
     3. Install Volatility.
-    4. Downlaod RAMSCAN and CMDCheck from https://github.com/TazWake/volatility-plugins to directory "volatility" within automa's directory. 
+    4. Download RAMSCAN and CMDCheck from https://github.com/TazWake/volatility-plugins to directory "volatility" within automa's directory. 
        *Note: Volatility.py utilises hard-coded directories which can be adapted to your setup.*
     6. Install VirusTotal API Python Library, vt-py.
        *Note: You will have to replace the api key in automa.py with your own*
