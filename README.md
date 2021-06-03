@@ -9,7 +9,7 @@ It utilises the following tools:
 * PEFile
 * VirusTotal API
 * Unipacker
-* VMWare
+* VirtualBox
 * Volatility
 * PE-Sieve
 
